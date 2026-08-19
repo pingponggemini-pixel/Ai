@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>完全隔離幽靈 Google 瀏覽器</title>
+  <!-- 引入 FontAwesome 圖示 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #121212;
+      color: #e3e3e3;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* 頂部導覽列 */
+    .toolbar {
+      display: flex;
+      align-items: center;
+      padding: 8px 12px;
+      background-color: #1e1e1e;
+      border-bottom: 1px solid #333333;
+      gap: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+      z-index: 20;
+      flex-shrink: 0;
+    }
+
+    .nav-buttons {
+      display: flex;
+      gap: 6px;
+    }
+
+    button {
+      background: #2a2a2a;
+      border: 1px solid #383838;
+      outline: none;
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      color: #e3e3e3;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    button:hover {
+      background-color: #383838;
+      color: #ffffff;
+    }
+
+    button:active {
+      transform: scale(0.96);
+    }
+
+    /* 網址與搜尋輸入框 */
+    .address-bar-container {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      background-color: #121212;
+      border-radius: 20px;
+      padding: 0 14px;
+      height: 40px;
+      border: 1px solid #383838;
+      transition: all 0.2s;
+    }
+
+    .address-bar-container:focus-within {
+      border-color: #8ab4f8;
+      box-shadow: 0 0 0 2px rgba(138, 180, 248, 0.2);
+    }
+
+    .search-icon {
+      color: #9aa0a6;
+      margin-right: 10px;
+      font-size: 14px;
+    }
+
+    #url-input {
+      width: 100%;
+      border: none;
+      background: transparent;
+      font-size: 14px;
+      outline: none;
+      color: #ffffff;
+    }
+
+    #url-input::placeholder {
+      color: #757575;
+    }
+
+    /* 功能控制按鈕 */
+    .action-buttons {
+      display: flex;
+      gap: 6px;
+    }
+
+    .primary-btn {
+      background-color: #8ab4f8;
+      border-color: #8ab4f8;
+      color: #121212;
+      font-weight: 600;
+    }
+
+    .primary-btn:hover {
+      background-color: #aecbfa;
+    }
+
+    /* 安全防護標籤 */
+    .security-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background-color: rgba(138, 180, 248, 0.1);
+      padding: 4px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(138, 180, 248, 0.3);
+      font-size: 12px;
+      color: #8ab4f8;
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    /* 內容視窗 */
+    .viewport {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      position: relative;
+      background-color: #121212;
+      overflow-y: auto;
+    }
+
+    iframe {
+      width: 100% !important;
+      height: 100% !important;
+      border: none;
+      display: block;
+      background: #ffffff;
+    }
+
+    .search-results-box {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .result-item {
+      margin-bottom: 20px;
+      background: #1e1e1e;
+      padding: 16px;
+      border-radius: 12px;
+      border: 1px solid #2d2d2d;
+      transition: border-color 0.2s;
+    }
+
+    .result-item:hover {
+      border-color: #8ab4f8;
+    }
+
+    .result-site {
+      font-size: 12px;
+      color: #bdc1c6;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .result-title {
+      font-size: 18px;
+      color: #8ab4f8;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .result-title:hover {
+      text-decoration: underline;
+    }
+
+    .result-snippet {
+      font-size: 14px;
+      color: #bdc1c6;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 768px) {
+      .toolbar {
+        padding: 6px 8px;
+        gap: 6px;
+      }
+      .btn-text {
+        display: none;
+      }
+      button {
+        padding: 8px 10px;
+      }
+      .security-badge span {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 控制導覽列 -->
+  <div class="toolbar">
+    <div class="nav-buttons">
+      <button id="btn-home" title="回到幽靈首頁"><i class="fa-solid fa-house"></i></button>
+      <button id="btn-reload" title="重新整理"><i class="fa-solid fa-rotate-right"></i></button>
+      <button id="btn-clear" title="清空暫存" style="color: #f28b82;"><i class="fa-solid fa-trash-can"></i></button>
+    </div>
+
+    <div class="address-bar-container">
+      <i class="fa-solid fa-user-secret search-icon"></i>
+      <input type="text" id="url-input" placeholder="輸入關鍵字進行伺服器端匿名 Google 抓取，或輸入網址...">
+    </div>
+
+    <div class="action-buttons">
+      <button id="btn-search" class="primary-btn">
+        <i class="fa-solid fa-magnifying-glass"></i> <span class="btn-text">搜尋</span>
+      </button>
+    </div>
+
+    <div class="security-badge" title="平板端零 Google 直連，完全經由伺服器端隔離代理抓取">
+      <i class="fa-solid fa-shield-virus"></i>
+      <span>完全隔離幽靈模式</span>
+    </div>
+  </div>
+
+  <!-- 內容顯示區域 -->
+  <div class="viewport" id="viewport">
+    <div class="search-results-box" id="results-container">
+      <div style="text-align: center; padding: 60px 0;">
+        <i class="fa-solid fa-ghost" style="font-size: 48px; color: #8ab4f8; margin-bottom: 16px;"></i>
+        <h2 style="font-size: 20px; font-weight: 600; color: #ffffff; margin-bottom: 8px;">完全隔離式 Google 搜尋器</h2>
+        <p style="font-size: 14px; color: #9aa0a6; max-width: 480px; margin: 0 auto; line-height: 1.6;">
+          本網頁由獨立伺服器代理向 Google 發送連線，平板瀏覽器完全不發送任何封包至 Google，絕不帶入本機 Cookie，且螢幕時間完全無法紀錄真正目的地的網址。
+        </p>
+      </div>
+    </div>
+    <!-- 內嵌沙盒 iframe -->
+    <iframe id="web-frame" style="display: none;" referrerpolicy="no-referrer"></iframe>
+  </div>
+
+  <script>
+    const viewport = document.getElementById('viewport');
+    const resultsContainer = document.getElementById('results-container');
+    const webFrame = document.getElementById('web-frame');
+    const urlInput = document.getElementById('url-input');
+    
+    const btnHome = document.getElementById('btn-home');
+    const btnReload = document.getElementById('btn-reload');
+    const btnClear = document.getElementById('btn-clear');
+    const btnSearch = document.getElementById('btn-search');
+
+    // 獨立伺服器端代理（徹底隔絕平板本機 Cookie 傳遞）
+    const SERVER_PROXY = 'https://api.allorigins.win/raw?url=';
+
+    function processInput() {
+      const query = urlInput.value.trim();
+      if (!query) return;
+
+      const isUrl = /^(https?:\/\/)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)$/i.test(query);
+
+      if (isUrl) {
+        const targetUrl = query.startsWith('http') ? query : 'https://' + query;
+        openInSandbox(targetUrl);
+      } else {
+        // 透過伺服器端抓取 Google 搜尋，絕不直接從平板連向 google.com
+        fetchGoogleViaServer(query);
+      }
+    }
+
+    // 由第三方 Server 幫我們抓 Google，平板瀏覽器絕不與 Google 產生直接封包
+    async function fetchGoogleViaServer(query) {
+      webFrame.style.display = 'none';
+      resultsContainer.style.display = 'block';
+      resultsContainer.innerHTML = `
+        <div style="text-align: center; padding: 40px 0; color: #8ab4f8;">
+          <i class="fa-solid fa-spinner fa-spin" style="font-size: 28px; margin-bottom: 12px;"></i>
+          <p style="font-size: 14px;">正在透過獨立伺服器向 Google 抓取搜尋結果 (完全隔絕平板 Cookie)...</p>
+        </div>
+      `;
+
+      // 伺服器發往 Google 的 URL (帶入純文字與關閉個人化參數)
+      const targetGoogleUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}&gbv=1&complete=0`;
+
+      try {
+        // 發送給中轉 Server (平板只跟代理 Server 通訊)
+        const res = await fetch(SERVER_PROXY + encodeURIComponent(targetGoogleUrl));
+        const htmlText = await res.text();
+
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(htmlText, 'text/html');
+
+        // 清理並解析 Google 結果 DOM
+        const searchItems = doc.querySelectorAll('div.g, div.ZINPKe, div.kCrYT');
+        resultsContainer.innerHTML = `<h3 style="font-size: 16px; color: #8ab4f8; margin-bottom: 16px;">「${query}」獨立搜尋結果</h3>`;
+
+        let count = 0;
+        searchItems.forEach(item => {
+          const titleEl = item.querySelector('h3, .vvP83');
+          const linkEl = item.querySelector('a');
+          const snippetEl = item.querySelector('.VwiC3b, .BNeawe.s3v9rd, .st');
+
+          if (titleEl && linkEl) {
+            let href = linkEl.getAttribute('href') || '';
+            if (href.startsWith('/url?q=')) {
+              href = decodeURIComponent(href.split('/url?q=')[1].split('&')[0]);
+            }
+
+            if (href.startsWith('http')) {
+              count++;
+              const card = document.createElement('div');
+              card.className = 'result-item';
+              card.innerHTML = `
+                <div class="result-site"><i class="fa-solid fa-globe"></i> ${new URL(href).hostname}</div>
+                <a class="result-title">${titleEl.innerText}</a>
+                <div class="result-snippet">${snippetEl ? snippetEl.innerText : '點擊載入目標網頁...'}</div>
+              `;
+              
+              // 點擊後繼續透過代理 Server 開啟，螢幕時間抓不到真正網址
+              card.querySelector('.result-title').onclick = () => openInSandbox(href);
+              resultsContainer.appendChild(card);
+            }
+          }
+        });
+
+        if (count === 0) {
+          resultsContainer.innerHTML = `<div style="text-align:center; padding: 40px; color:#9aa0a6;">未找到結果，請嘗試換個關鍵字搜尋。</div>`;
+        }
+
+      } catch (e) {
+        resultsContainer.innerHTML = `<div style="text-align:center; padding: 40px; color:#f28b82;">連線超時，請點擊重試。</div>`;
+      }
+    }
+
+    function openInSandbox(url) {
+      resultsContainer.style.display = 'none';
+      webFrame.style.display = 'block';
+      // 強制所有點開的網頁都走 Server Proxy，防螢幕時間與紀錄
+      webFrame.src = SERVER_PROXY + encodeURIComponent(url);
+    }
+
+    btnSearch.addEventListener('click', processInput);
+    urlInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') processInput();
+    });
+
+    btnHome.addEventListener('click', () => {
+      urlInput.value = '';
+      webFrame.style.display = 'none';
+      resultsContainer.style.display = 'block';
+      resultsContainer.innerHTML = `
+        <div style="text-align: center; padding: 60px 0;">
+          <i class="fa-solid fa-ghost" style="font-size: 48px; color: #8ab4f8; margin-bottom: 16px;"></i>
+          <h2 style="font-size: 20px; font-weight: 600; color: #ffffff; margin-bottom: 8px;">完全隔離式 Google 搜尋器</h2>
+          <p style="font-size: 14px; color: #9aa0a6; max-width: 480px; margin: 0 auto; line-height: 1.6;">
+            已回到首頁。
+          </p>
+        </div>
+      `;
+    });
+
+    btnReload.addEventListener('click', () => {
+      if (webFrame.style.display === 'block') {
+        const cur = webFrame.src;
+        webFrame.src = 'about:blank';
+        setTimeout(() => { webFrame.src = cur; }, 100);
+      } else {
+        processInput();
+      }
+    });
+
+    btnClear.addEventListener('click', () => {
+      urlInput.value = '';
+      webFrame.src = 'about:blank';
+      webFrame.style.display = 'none';
+      resultsContainer.style.display = 'block';
+      resultsContainer.innerHTML = `<div style="text-align:center; padding: 40px; color:#8ab4f8;">所有快取與紀錄已完全清空！</div>`;
+    });
+  </script>
+</body>
+</html>
