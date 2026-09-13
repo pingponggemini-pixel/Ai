@@ -1,408 +1,544 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>完全隔離幽靈 Google 瀏覽器</title>
-  <!-- 引入 FontAwesome 圖示 -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    html, body {
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background-color: #121212;
-      color: #e3e3e3;
-    }
-
-    body {
-      display: flex;
-      flex-direction: column;
-    }
-
-    /* 頂部導覽列 */
-    .toolbar {
-      display: flex;
-      align-items: center;
-      padding: 8px 12px;
-      background-color: #1e1e1e;
-      border-bottom: 1px solid #333333;
-      gap: 10px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
-      z-index: 20;
-      flex-shrink: 0;
-    }
-
-    .nav-buttons {
-      display: flex;
-      gap: 6px;
-    }
-
-    button {
-      background: #2a2a2a;
-      border: 1px solid #383838;
-      outline: none;
-      padding: 8px 12px;
-      border-radius: 8px;
-      cursor: pointer;
-      color: #e3e3e3;
-      font-size: 14px;
-      font-weight: 500;
-      transition: all 0.2s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-    }
-
-    button:hover {
-      background-color: #383838;
-      color: #ffffff;
-    }
-
-    button:active {
-      transform: scale(0.96);
-    }
-
-    /* 網址與搜尋輸入框 */
-    .address-bar-container {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      background-color: #121212;
-      border-radius: 20px;
-      padding: 0 14px;
-      height: 40px;
-      border: 1px solid #383838;
-      transition: all 0.2s;
-    }
-
-    .address-bar-container:focus-within {
-      border-color: #8ab4f8;
-      box-shadow: 0 0 0 2px rgba(138, 180, 248, 0.2);
-    }
-
-    .search-icon {
-      color: #9aa0a6;
-      margin-right: 10px;
-      font-size: 14px;
-    }
-
-    #url-input {
-      width: 100%;
-      border: none;
-      background: transparent;
-      font-size: 14px;
-      outline: none;
-      color: #ffffff;
-    }
-
-    #url-input::placeholder {
-      color: #757575;
-    }
-
-    /* 功能控制按鈕 */
-    .action-buttons {
-      display: flex;
-      gap: 6px;
-    }
-
-    .primary-btn {
-      background-color: #8ab4f8;
-      border-color: #8ab4f8;
-      color: #121212;
-      font-weight: 600;
-    }
-
-    .primary-btn:hover {
-      background-color: #aecbfa;
-    }
-
-    /* 安全防護標籤 */
-    .security-badge {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      background-color: rgba(138, 180, 248, 0.1);
-      padding: 4px 10px;
-      border-radius: 12px;
-      border: 1px solid rgba(138, 180, 248, 0.3);
-      font-size: 12px;
-      color: #8ab4f8;
-      user-select: none;
-      white-space: nowrap;
-    }
-
-    /* 內容視窗 */
-    .viewport {
-      flex: 1;
-      width: 100%;
-      height: 100%;
-      position: relative;
-      background-color: #121212;
-      overflow-y: auto;
-    }
-
-    iframe {
-      width: 100% !important;
-      height: 100% !important;
-      border: none;
-      display: block;
-      background: #ffffff;
-    }
-
-    .search-results-box {
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-
-    .result-item {
-      margin-bottom: 20px;
-      background: #1e1e1e;
-      padding: 16px;
-      border-radius: 12px;
-      border: 1px solid #2d2d2d;
-      transition: border-color 0.2s;
-    }
-
-    .result-item:hover {
-      border-color: #8ab4f8;
-    }
-
-    .result-site {
-      font-size: 12px;
-      color: #bdc1c6;
-      margin-bottom: 4px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .result-title {
-      font-size: 18px;
-      color: #8ab4f8;
-      font-weight: 500;
-      cursor: pointer;
-      text-decoration: none;
-      margin-bottom: 6px;
-      display: block;
-    }
-
-    .result-title:hover {
-      text-decoration: underline;
-    }
-
-    .result-snippet {
-      font-size: 14px;
-      color: #bdc1c6;
-      line-height: 1.5;
-    }
-
-    @media (max-width: 768px) {
-      .toolbar {
-        padding: 6px 8px;
-        gap: 6px;
-      }
-      .btn-text {
-        display: none;
-      }
-      button {
-        padding: 8px 10px;
-      }
-      .security-badge span {
-        display: none;
-      }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>像素素材冒險遊戲</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: #090d16;
+        }
+        /* 啟用點陣像素渲染，防止圖片拉大時模糊 */
+        canvas {
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            -moz-crisp-edges: pixelated;
+        }
+    </style>
 </head>
-<body>
+<body class="flex flex-col items-center justify-center min-h-screen p-2 text-white overflow-hidden">
 
-  <!-- 控制導覽列 -->
-  <div class="toolbar">
-    <div class="nav-buttons">
-      <button id="btn-home" title="回到幽靈首頁"><i class="fa-solid fa-house"></i></button>
-      <button id="btn-reload" title="重新整理"><i class="fa-solid fa-rotate-right"></i></button>
-      <button id="btn-clear" title="清空暫存" style="color: #f28b82;"><i class="fa-solid fa-trash-can"></i></button>
-    </div>
-
-    <div class="address-bar-container">
-      <i class="fa-solid fa-user-secret search-icon"></i>
-      <input type="text" id="url-input" placeholder="輸入關鍵字進行伺服器端匿名 Google 抓取，或輸入網址...">
-    </div>
-
-    <div class="action-buttons">
-      <button id="btn-search" class="primary-btn">
-        <i class="fa-solid fa-magnifying-glass"></i> <span class="btn-text">搜尋</span>
-      </button>
-    </div>
-
-    <div class="security-badge" title="平板端零 Google 直連，完全經由伺服器端隔離代理抓取">
-      <i class="fa-solid fa-shield-virus"></i>
-      <span>完全隔離幽靈模式</span>
-    </div>
-  </div>
-
-  <!-- 內容顯示區域 -->
-  <div class="viewport" id="viewport">
-    <div class="search-results-box" id="results-container">
-      <div style="text-align: center; padding: 60px 0;">
-        <i class="fa-solid fa-ghost" style="font-size: 48px; color: #8ab4f8; margin-bottom: 16px;"></i>
-        <h2 style="font-size: 20px; font-weight: 600; color: #ffffff; margin-bottom: 8px;">完全隔離式 Google 搜尋器</h2>
-        <p style="font-size: 14px; color: #9aa0a6; max-width: 480px; margin: 0 auto; line-height: 1.6;">
-          本網頁由獨立伺服器代理向 Google 發送連線，平板瀏覽器完全不發送任何封包至 Google，絕不帶入本機 Cookie，且螢幕時間完全無法紀錄真正目的地的網址。
-        </p>
-      </div>
-    </div>
-    <!-- 內嵌沙盒 iframe -->
-    <iframe id="web-frame" style="display: none;" referrerpolicy="no-referrer"></iframe>
-  </div>
-
-  <script>
-    const viewport = document.getElementById('viewport');
-    const resultsContainer = document.getElementById('results-container');
-    const webFrame = document.getElementById('web-frame');
-    const urlInput = document.getElementById('url-input');
-    
-    const btnHome = document.getElementById('btn-home');
-    const btnReload = document.getElementById('btn-reload');
-    const btnClear = document.getElementById('btn-clear');
-    const btnSearch = document.getElementById('btn-search');
-
-    // 獨立伺服器端代理（徹底隔絕平板本機 Cookie 傳遞）
-    const SERVER_PROXY = 'https://api.allorigins.win/raw?url=';
-
-    function processInput() {
-      const query = urlInput.value.trim();
-      if (!query) return;
-
-      const isUrl = /^(https?:\/\/)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)$/i.test(query);
-
-      if (isUrl) {
-        const targetUrl = query.startsWith('http') ? query : 'https://' + query;
-        openInSandbox(targetUrl);
-      } else {
-        // 透過伺服器端抓取 Google 搜尋，絕不直接從平板連向 google.com
-        fetchGoogleViaServer(query);
-      }
-    }
-
-    // 由第三方 Server 幫我們抓 Google，平板瀏覽器絕不與 Google 產生直接封包
-    async function fetchGoogleViaServer(query) {
-      webFrame.style.display = 'none';
-      resultsContainer.style.display = 'block';
-      resultsContainer.innerHTML = `
-        <div style="text-align: center; padding: 40px 0; color: #8ab4f8;">
-          <i class="fa-solid fa-spinner fa-spin" style="font-size: 28px; margin-bottom: 12px;"></i>
-          <p style="font-size: 14px;">正在透過獨立伺服器向 Google 抓取搜尋結果 (完全隔絕平板 Cookie)...</p>
+    <div class="relative w-full max-w-4xl bg-slate-900/90 rounded-2xl shadow-2xl overflow-hidden border border-purple-900/50 flex flex-col items-center p-4">
+        
+        <!-- 頂部標題與狀態資訊 -->
+        <div class="w-full flex justify-between items-center mb-3 px-2">
+            <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-gamepad text-purple-400 text-2xl"></i>
+                <h1 class="text-xl md:text-2xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-amber-300 bg-clip-text text-transparent tracking-wide">
+                    8-Bit 像素素材冒險
+                </h1>
+            </div>
+            <div class="flex items-center space-x-4 bg-slate-950/80 px-4 py-1.5 rounded-full border border-purple-800/40">
+                <div class="flex items-center space-x-1.5">
+                    <i class="fa-solid fa-coins text-amber-400"></i>
+                    <span id="scoreText" class="font-mono text-lg font-bold text-amber-300">0</span>
+                </div>
+                <div class="h-4 w-[1px] bg-slate-800"></div>
+                <div class="flex items-center space-x-1.5">
+                    <i class="fa-solid fa-heart text-rose-500"></i>
+                    <span id="livesText" class="font-mono text-lg font-bold text-rose-400">3</span>
+                </div>
+            </div>
         </div>
-      `;
 
-      // 伺服器發往 Google 的 URL (帶入純文字與關閉個人化參數)
-      const targetGoogleUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}&gbv=1&complete=0`;
+        <!-- 遊戲 Canvas 區域 -->
+        <div class="relative w-full aspect-[16/9] bg-slate-950 rounded-xl overflow-hidden border border-slate-800 shadow-inner">
+            <canvas id="gameCanvas" class="w-full h-full block"></canvas>
 
-      try {
-        // 發送給中轉 Server (平板只跟代理 Server 通訊)
-        const res = await fetch(SERVER_PROXY + encodeURIComponent(targetGoogleUrl));
-        const htmlText = await res.text();
+            <!-- 啟動與遊戲結束遮罩層 -->
+            <div id="overlay" class="absolute inset-0 bg-slate-950/85 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center z-10 transition-opacity duration-300">
+                <h2 id="overlayTitle" class="text-3xl md:text-4xl font-extrabold text-amber-400 mb-2 drop-shadow-[0_2px_10px_rgba(251,191,36,0.3)]">
+                    像素風格網路素材冒險
+                </h2>
+                <p id="overlaySub" class="text-slate-300 max-w-md mb-6 text-sm md:text-base leading-relaxed">
+                    全數採用 <span class="text-purple-300 font-bold">Pixel Art 點陣畫風</span> 素材（角色騎士、史萊姆怪物、像素金幣與復古像素背景）！<br>
+                    使用方向鍵左右移動、空白鍵或 [跳躍] 按鈕跳躍。
+                </p>
+                <button id="startBtn" class="px-8 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg border border-purple-400/30 transform transition active:scale-95 text-lg">
+                    <i class="fa-solid fa-play mr-2"></i>開始冒險
+                </button>
+            </div>
+        </div>
 
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(htmlText, 'text/html');
+        <!-- 行動裝置按鈕控制列 -->
+        <div class="w-full flex justify-between items-center mt-3 px-2 gap-2">
+            <div class="flex gap-2">
+                <button id="btnLeft" class="w-14 h-14 bg-slate-700 active:bg-cyan-600 text-white rounded-xl shadow border border-slate-600 flex items-center justify-center text-xl touch-none">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </button>
+                <button id="btnRight" class="w-14 h-14 bg-slate-700 active:bg-cyan-600 text-white rounded-xl shadow border border-slate-600 flex items-center justify-center text-xl touch-none">
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+            <div class="flex gap-2">
+                <button id="btnSound" class="h-14 px-4 bg-slate-700 active:bg-slate-600 text-slate-300 rounded-xl border border-slate-600 flex items-center justify-center text-sm">
+                    <i id="soundIcon" class="fa-solid fa-volume-high mr-1.5"></i> 音效
+                </button>
+                <button id="btnJump" class="h-14 px-8 bg-gradient-to-r from-indigo-500 to-purple-600 active:from-indigo-600 active:to-purple-700 text-white font-bold rounded-xl shadow border border-indigo-400/30 flex items-center justify-center text-lg touch-none">
+                    <i class="fa-solid fa-up-long mr-2"></i>跳躍
+                </button>
+            </div>
+        </div>
+    </div>
 
-        // 清理並解析 Google 結果 DOM
-        const searchItems = doc.querySelectorAll('div.g, div.ZINPKe, div.kCrYT');
-        resultsContainer.innerHTML = `<h3 style="font-size: 16px; color: #8ab4f8; margin-bottom: 16px;">「${query}」獨立搜尋結果</h3>`;
+    <script>
+        // 畫布與全域設定
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const overlay = document.getElementById('overlay');
+        const overlayTitle = document.getElementById('overlayTitle');
+        const overlaySub = document.getElementById('overlaySub');
+        const startBtn = document.getElementById('startBtn');
+        const scoreText = document.getElementById('scoreText');
+        const livesText = document.getElementById('livesText');
+        const btnSound = document.getElementById('btnSound');
+        const soundIcon = document.getElementById('soundIcon');
 
-        let count = 0;
-        searchItems.forEach(item => {
-          const titleEl = item.querySelector('h3, .vvP83');
-          const linkEl = item.querySelector('a');
-          const snippetEl = item.querySelector('.VwiC3b, .BNeawe.s3v9rd, .st');
+        // 音效控制
+        let audioMuted = false;
+        let synth, coinSynth, hitSynth;
 
-          if (titleEl && linkEl) {
-            let href = linkEl.getAttribute('href') || '';
-            if (href.startsWith('/url?q=')) {
-              href = decodeURIComponent(href.split('/url?q=')[1].split('&')[0]);
+        function initAudio() {
+            if (synth) return;
+            try {
+                synth = new Tone.Synth({ oscillator: { type: 'square' }, envelope: { attack: 0.01, decay: 0.1, sustain: 0, release: 0.1 } }).toDestination();
+                coinSynth = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.001, decay: 0.12, sustain: 0, release: 0.08 } }).toDestination();
+                hitSynth = new NoiseSynth({ noise: { type: 'white' }, envelope: { attack: 0.001, decay: 0.15, sustain: 0 } }).toDestination();
+            } catch (e) {
+                console.log("Audio Init Warning:", e);
             }
-
-            if (href.startsWith('http')) {
-              count++;
-              const card = document.createElement('div');
-              card.className = 'result-item';
-              card.innerHTML = `
-                <div class="result-site"><i class="fa-solid fa-globe"></i> ${new URL(href).hostname}</div>
-                <a class="result-title">${titleEl.innerText}</a>
-                <div class="result-snippet">${snippetEl ? snippetEl.innerText : '點擊載入目標網頁...'}</div>
-              `;
-              
-              // 點擊後繼續透過代理 Server 開啟，螢幕時間抓不到真正網址
-              card.querySelector('.result-title').onclick = () => openInSandbox(href);
-              resultsContainer.appendChild(card);
-            }
-          }
-        });
-
-        if (count === 0) {
-          resultsContainer.innerHTML = `<div style="text-align:center; padding: 40px; color:#9aa0a6;">未找到結果，請嘗試換個關鍵字搜尋。</div>`;
         }
 
-      } catch (e) {
-        resultsContainer.innerHTML = `<div style="text-align:center; padding: 40px; color:#f28b82;">連線超時，請點擊重試。</div>`;
-      }
-    }
+        function playJumpSound() {
+            if (audioMuted || !synth) return;
+            try { synth.triggerAttackRelease("E5", "16n"); } catch (e) {}
+        }
+        function playCoinSound() {
+            if (audioMuted || !coinSynth) return;
+            try { coinSynth.triggerAttackRelease("B5", "32n"); } catch (e) {}
+        }
+        function playHitSound() {
+            if (audioMuted || !hitSynth) return;
+            try { hitSynth.triggerAttackRelease("16n"); } catch (e) {}
+        }
 
-    function openInSandbox(url) {
-      resultsContainer.style.display = 'none';
-      webFrame.style.display = 'block';
-      // 強制所有點開的網頁都走 Server Proxy，防螢幕時間與紀錄
-      webFrame.src = SERVER_PROXY + encodeURIComponent(url);
-    }
+        // 全數替換為 GitHub 託管的真實網路像素圖檔素材 (PNG)
+        const assets = {
+            bg: new Image(),
+            hero: new Image(),
+            enemy: new Image(),
+            coin: new Image()
+        };
 
-    btnSearch.addEventListener('click', processInput);
-    urlInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') processInput();
-    });
+        // 真正的網路外部素材連結 (GitHub / Public CDN PNGs)
+        const assetSources = {
+            // 網路像素背景
+            bg: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1200&auto=format&fit=crop',
 
-    btnHome.addEventListener('click', () => {
-      urlInput.value = '';
-      webFrame.style.display = 'none';
-      resultsContainer.style.display = 'block';
-      resultsContainer.innerHTML = `
-        <div style="text-align: center; padding: 60px 0;">
-          <i class="fa-solid fa-ghost" style="font-size: 48px; color: #8ab4f8; margin-bottom: 16px;"></i>
-          <h2 style="font-size: 20px; font-weight: 600; color: #ffffff; margin-bottom: 8px;">完全隔離式 Google 搜尋器</h2>
-          <p style="font-size: 14px; color: #9aa0a6; max-width: 480px; margin: 0 auto; line-height: 1.6;">
-            已回到首頁。
-          </p>
-        </div>
-      `;
-    });
+            // 網路外部像素勇者圖檔 (.png)
+            hero: 'https://raw.githubusercontent.com/taniarascia/dungeon-crawler/master/src/images/hero.png',
 
-    btnReload.addEventListener('click', () => {
-      if (webFrame.style.display === 'block') {
-        const cur = webFrame.src;
-        webFrame.src = 'about:blank';
-        setTimeout(() => { webFrame.src = cur; }, 100);
-      } else {
-        processInput();
-      }
-    });
+            // 網路外部像素哥布林怪物圖檔 (.png)
+            enemy: 'https://raw.githubusercontent.com/taniarascia/dungeon-crawler/master/src/images/goblin.png',
 
-    btnClear.addEventListener('click', () => {
-      urlInput.value = '';
-      webFrame.src = 'about:blank';
-      webFrame.style.display = 'none';
-      resultsContainer.style.display = 'block';
-      resultsContainer.innerHTML = `<div style="text-align:center; padding: 40px; color:#8ab4f8;">所有快取與紀錄已完全清空！</div>`;
-    });
-  </script>
+            // 網路外部像素寶箱/金幣圖檔 (.png)
+            coin: 'https://raw.githubusercontent.com/taniarascia/dungeon-crawler/master/src/images/chest.png'
+        };
+
+        // 備援點陣圖 (防止網路圖床暫時斷線)
+        const fallbackSVG = {
+            hero: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" shape-rendering="crispEdges"><rect x="5" y="0" width="6" height="2" fill="%23475569"/><rect x="4" y="2" width="8" height="4" fill="%2394a3b8"/><rect x="5" y="3" width="2" height="2" fill="%2338bdf8"/><rect x="9" y="3" width="2" height="2" fill="%2338bdf8"/><rect x="4" y="6" width="8" height="6" fill="%232563eb"/><rect x="2" y="7" width="2" height="4" fill="%23fbbf24"/><rect x="12" y="6" width="3" height="1" fill="%23cbd5e1"/><rect x="13" y="7" width="1" height="4" fill="%2394a3b8"/><rect x="5" y="12" width="2" height="4" fill="%231e293b"/><rect x="9" y="12" width="2" height="4" fill="%231e293b"/></svg>',
+            enemy: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" shape-rendering="crispEdges"><rect x="4" y="3" width="8" height="3" fill="%23f43f5e"/><rect x="2" y="6" width="12" height="6" fill="%23e11d48"/><rect x="1" y="12" width="14" height="4" fill="%23be123c"/><rect x="4" y="7" width="2" height="3" fill="%23ffffff"/><rect x="10" y="7" width="2" height="3" fill="%23ffffff"/><rect x="5" y="8" width="1" height="1" fill="%23000000"/><rect x="11" y="8" width="1" height="1" fill="%23000000"/><rect x="6" y="12" width="4" height="1" fill="%23ffffff"/></svg>',
+            coin: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" shape-rendering="crispEdges"><rect x="5" y="1" width="6" height="14" fill="%23d97706"/><rect x="3" y="2" width="10" height="12" fill="%23f59e0b"/><rect x="4" y="4" width="8" height="8" fill="%23fbbf24"/><rect x="6" y="5" width="4" height="6" fill="%23fef08a"/><rect x="5" y="5" width="2" height="2" fill="%23ffffff"/></svg>'
+        };
+
+        // 載入圖片並設定容錯備援
+        function loadAssets() {
+            Object.keys(assetSources).forEach(key => {
+                assets[key].crossOrigin = "anonymous";
+                assets[key].onerror = function() {
+                    console.warn(`外部圖片素材 ${key} 載入失敗，啟動備援機制。`);
+                    if (fallbackSVG[key]) {
+                        this.src = fallbackSVG[key];
+                    }
+                };
+                assets[key].src = assetSources[key];
+            });
+        }
+        loadAssets();
+
+        // 畫布解析度調適
+        let GAME_WIDTH = 800;
+        let GAME_HEIGHT = 450;
+
+        function resizeCanvas() {
+            canvas.width = GAME_WIDTH;
+            canvas.height = GAME_HEIGHT;
+            // 確保每次重設大小都關閉平滑化，保有像素銳利感
+            ctx.imageSmoothingEnabled = false;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // 遊戲狀態變數
+        let isRunning = false;
+        let score = 0;
+        let lives = 3;
+        let bgScrollX = 0;
+        let gameSpeed = 4;
+
+        // 玩家物件 (Hero)
+        const player = {
+            x: 100,
+            y: 300,
+            width: 50,
+            height: 50,
+            vx: 0,
+            vy: 0,
+            speed: 6,
+            jumpStrength: -13,
+            gravity: 0.65,
+            groundY: 340,
+            isJumping: false,
+            facingRight: true
+        };
+
+        // 按鍵輸入狀態
+        const keys = {
+            left: false,
+            right: false,
+            up: false
+        };
+
+        // 遊戲動態物件陣列
+        let enemies = [];
+        let coins = [];
+        let particles = [];
+
+        // 生成敵人物件 (使用網路怪物圖片)
+        function spawnEnemy() {
+            const size = 45 + Math.random() * 15;
+            enemies.push({
+                x: GAME_WIDTH + 50,
+                y: player.groundY + player.height - size,
+                width: size,
+                height: size,
+                speed: gameSpeed + Math.random() * 2,
+                passed: false
+            });
+        }
+
+        // 生成金幣物件 (使用網路寶藏圖片)
+        function spawnCoin() {
+            const size = 32;
+            const coinY = player.groundY - 30 - Math.random() * 120;
+            coins.push({
+                x: GAME_WIDTH + 50,
+                y: coinY,
+                width: size,
+                height: size,
+                speed: gameSpeed,
+                collected: false
+            });
+        }
+
+        // 遊戲主要更新邏輯
+        let enemyTimer = 0;
+        let coinTimer = 0;
+
+        function update() {
+            if (!isRunning) return;
+
+            // 1. 玩家水平移動
+            if (keys.left) {
+                player.vx = -player.speed;
+                player.facingRight = false;
+            } else if (keys.right) {
+                player.vx = player.speed;
+                player.facingRight = true;
+            } else {
+                player.vx = 0;
+            }
+            player.x += player.vx;
+
+            // 邊界防護
+            if (player.x < 10) player.x = 10;
+            if (player.x > GAME_WIDTH - player.width - 10) player.x = GAME_WIDTH - player.width - 10;
+
+            // 2. 玩家跳躍與重力
+            if (keys.up && !player.isJumping) {
+                player.vy = player.jumpStrength;
+                player.isJumping = true;
+                playJumpSound();
+            }
+            player.vy += player.gravity;
+            player.y += player.vy;
+
+            // 著地判定
+            if (player.y >= player.groundY) {
+                player.y = player.groundY;
+                player.vy = 0;
+                player.isJumping = false;
+            }
+
+            // 3. 背景捲動
+            bgScrollX = (bgScrollX + gameSpeed * 0.5) % GAME_WIDTH;
+
+            // 4. 定時生成怪物與金幣
+            enemyTimer++;
+            if (enemyTimer > 100 + Math.random() * 60) {
+                spawnEnemy();
+                enemyTimer = 0;
+            }
+
+            coinTimer++;
+            if (coinTimer > 70 + Math.random() * 50) {
+                spawnCoin();
+                coinTimer = 0;
+            }
+
+            // 5. 更新怪物位置與碰撞判定
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                let e = enemies[i];
+                e.x -= e.speed;
+
+                // AABB 矩形碰撞檢測
+                if (
+                    player.x < e.x + e.width - 8 &&
+                    player.x + player.width > e.x + 8 &&
+                    player.y < e.y + e.height - 8 &&
+                    player.y + player.height > e.y + 8
+                ) {
+                    playHitSound();
+                    createParticles(player.x + player.width/2, player.y + player.height/2, '#f43f5e', 15);
+                    lives--;
+                    livesText.innerText = lives;
+                    enemies.splice(i, 1);
+
+                    if (lives <= 0) {
+                        gameOver();
+                    }
+                    continue;
+                }
+
+                // 超出邊界移除
+                if (e.x + e.width < -50) {
+                    enemies.splice(i, 1);
+                }
+            }
+
+            // 6. 更新金幣位置與吃金幣檢測
+            for (let i = coins.length - 1; i >= 0; i--) {
+                let c = coins[i];
+                c.x -= c.speed;
+
+                if (
+                    player.x < c.x + c.width &&
+                    player.x + player.width > c.x &&
+                    player.y < c.y + c.height &&
+                    player.y + player.height > c.y
+                ) {
+                    playCoinSound();
+                    createParticles(c.x + c.width/2, c.y + c.height/2, '#fbbf24', 10);
+                    score += 10;
+                    scoreText.innerText = score;
+                    coins.splice(i, 1);
+                    continue;
+                }
+
+                if (c.x + c.width < -50) {
+                    coins.splice(i, 1);
+                }
+            }
+
+            // 7. 更新粒子
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.alpha -= 0.03;
+                if (p.alpha <= 0) particles.splice(i, 1);
+            }
+
+            // 隨時間微幅提升遊戲速度
+            gameSpeed += 0.0003;
+        }
+
+        // 爆發粒子效果
+        function createParticles(x, y, color, count) {
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 6,
+                    vy: (Math.random() - 0.5) * 6,
+                    radius: Math.random() * 4 + 2,
+                    color: color,
+                    alpha: 1
+                });
+            }
+        }
+
+        // 渲染畫布圖層 (全像素風格)
+        function render() {
+            // 清空畫布並鎖定像素平滑化
+            ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+            ctx.imageSmoothingEnabled = false;
+
+            // 1. 繪製像素背景圖片（雙圖無縫捲動）
+            if (assets.bg.complete && assets.bg.naturalWidth !== 0) {
+                ctx.drawImage(assets.bg, -bgScrollX, 0, GAME_WIDTH, GAME_HEIGHT);
+                ctx.drawImage(assets.bg, GAME_WIDTH - bgScrollX, 0, GAME_WIDTH, GAME_HEIGHT);
+            } else {
+                // 備援像素星空背景
+                ctx.fillStyle = '#090d16';
+                ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+            }
+
+            // 2. 繪製像素風格地面 (帶像素草皮紋理)
+            ctx.fillStyle = '#0f766e';
+            ctx.fillRect(0, player.groundY + player.height, GAME_WIDTH, GAME_HEIGHT - (player.groundY + player.height));
+            ctx.fillStyle = '#14b8a6';
+            ctx.fillRect(0, player.groundY + player.height, GAME_WIDTH, 6);
+            
+            // 繪製像素點點紋理
+            ctx.fillStyle = '#0d9488';
+            for (let x = 0; x < GAME_WIDTH; x += 16) {
+                ctx.fillRect(x + ((bgScrollX * 0.5) % 16), player.groundY + player.height + 10, 8, 4);
+            }
+
+            // 3. 繪製像素金幣 (Pixel Gold Coin)
+            coins.forEach(c => {
+                if (assets.coin.complete) {
+                    ctx.drawImage(assets.coin, c.x, c.y, c.width, c.height);
+                }
+            });
+
+            // 4. 繪製像素怪物史萊姆 (Pixel Monster Slime)
+            enemies.forEach(e => {
+                if (assets.enemy.complete) {
+                    ctx.drawImage(assets.enemy, e.x, e.y, e.width, e.height);
+                }
+            });
+
+            // 5. 繪製像素騎士主角 (Pixel Knight/Hero)，支援動態轉向
+            ctx.save();
+            if (!player.facingRight) {
+                ctx.translate(player.x + player.width, player.y);
+                ctx.scale(-1, 1);
+                if (assets.hero.complete) {
+                    ctx.drawImage(assets.hero, 0, 0, player.width, player.height);
+                }
+            } else {
+                if (assets.hero.complete) {
+                    ctx.drawImage(assets.hero, player.x, player.y, player.width, player.height);
+                }
+            }
+            ctx.restore();
+
+            // 6. 繪製像素風格爆發粒子 (方塊像素粒子)
+            particles.forEach(p => {
+                ctx.save();
+                ctx.globalAlpha = p.alpha;
+                ctx.fillStyle = p.color;
+                // 使用方形像素畫風粒子取代圓形
+                ctx.fillRect(p.x, p.y, p.radius * 2, p.radius * 2);
+                ctx.restore();
+            });
+        }
+
+        // 遊戲主循環
+        function gameLoop() {
+            update();
+            render();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // 開始遊戲
+        function startGame() {
+            initAudio();
+            if (Tone && Tone.context.state !== 'running') {
+                Tone.start();
+            }
+            score = 0;
+            lives = 3;
+            gameSpeed = 4;
+            enemies = [];
+            coins = [];
+            particles = [];
+            player.x = 100;
+            player.y = player.groundY;
+            scoreText.innerText = score;
+            livesText.innerText = lives;
+            isRunning = true;
+            overlay.classList.add('opacity-0', 'pointer-events-none');
+        }
+
+        // 遊戲結束
+        function gameOver() {
+            isRunning = false;
+            overlayTitle.innerText = "遊戲結束！";
+            overlaySub.innerHTML = `你的最終得分為：<strong class="text-amber-400 text-xl">${score}</strong> 分<br>準備好再試一次了嗎？`;
+            startBtn.innerHTML = '<i class="fa-solid fa-rotate-right mr-2"></i>重新開始';
+            overlay.classList.remove('opacity-0', 'pointer-events-none');
+        }
+
+        // 鍵盤控制監聽
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true;
+            if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
+            if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+                keys.up = true;
+                e.preventDefault();
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = false;
+            if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
+            if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') keys.up = false;
+        });
+
+        // 觸控按鈕綁定 (支援手機/平板)
+        const btnLeft = document.getElementById('btnLeft');
+        const btnRight = document.getElementById('btnRight');
+        const btnJump = document.getElementById('btnJump');
+
+        const bindTouch = (elem, keyName) => {
+            elem.addEventListener('touchstart', (e) => { e.preventDefault(); keys[keyName] = true; });
+            elem.addEventListener('touchend', (e) => { e.preventDefault(); keys[keyName] = false; });
+            elem.addEventListener('mousedown', () => { keys[keyName] = true; });
+            elem.addEventListener('mouseup', () => { keys[keyName] = false; });
+        };
+
+        bindTouch(btnLeft, 'left');
+        bindTouch(btnRight, 'right');
+        bindTouch(btnJump, 'up');
+
+        // 音效開關
+        btnSound.addEventListener('click', () => {
+            audioMuted = !audioMuted;
+            if (audioMuted) {
+                soundIcon.className = "fa-solid fa-volume-xmark mr-1.5 text-rose-400";
+            } else {
+                soundIcon.className = "fa-solid fa-volume-high mr-1.5 text-emerald-400";
+            }
+        });
+
+        startBtn.addEventListener('click', startGame);
+
+        // 初始化繪製
+        window.onload = function() {
+            render();
+            gameLoop();
+        };
+    </script>
 </body>
 </html>
